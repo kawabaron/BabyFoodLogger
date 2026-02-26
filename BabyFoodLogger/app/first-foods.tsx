@@ -9,7 +9,6 @@ type FirstFoodItem = {
     foodName: string;
     iconKey: string;
     firstDate: string;
-    babyFoodTypeName: string;
     hasAllergyMemo: boolean;
     latestPreference?: string;
 };
@@ -31,23 +30,21 @@ export default function FirstFoodsScreen() {
             dateFilter = ` AND mr.date LIKE '${month}%'`;
         }
 
+        // babyFoodTypeIdがnullableになったためJOINを削除し、食材のみで検索
         const rows = await db.getAllAsync<{
             foodId: string;
             foodName: string;
             iconKey: string;
             firstDate: string;
-            babyFoodTypeName: string;
             allergyReactionMemo: string | null;
         }>(
             `SELECT mrf.foodId, fm.name as foodName, fm.iconKey,
               MIN(mr.date) as firstDate,
-              bft.name as babyFoodTypeName,
               mr.allergyReactionMemo
        FROM meal_record_foods mrf
        INNER JOIN meal_records mr ON mrf.mealRecordId = mr.id
        INNER JOIN food_masters fm ON mrf.foodId = fm.id
-       INNER JOIN baby_food_type_masters bft ON mr.babyFoodTypeId = bft.id
-       WHERE mrf.isFirstTime = 1 AND mr.deletedAt IS NULL AND mr.childId = ?${dateFilter}
+       WHERE mr.deletedAt IS NULL AND mr.childId = ?${dateFilter}
        GROUP BY mrf.foodId
        ORDER BY firstDate DESC`,
             DEFAULT_CHILD_ID
@@ -93,7 +90,7 @@ export default function FirstFoodsScreen() {
                         <Text style={styles.itemIcon}>{item.iconKey}</Text>
                         <View style={styles.itemInfo}>
                             <Text style={styles.itemName}>{item.foodName}</Text>
-                            <Text style={styles.itemDate}>{item.firstDate} ・ {item.babyFoodTypeName}</Text>
+                            <Text style={styles.itemDate}>{item.firstDate}</Text>
                             {item.latestPreference && (
                                 <Text style={[
                                     styles.prefBadge,

@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { getMealRecordFoodsByRecordId } from '../../repositories/mealRecordRepository';
+import { useMasterStore } from '../../stores/masterStore';
 import type { MealRecord } from '../../types/domain';
 
 interface MealRecordCardProps {
@@ -8,6 +10,22 @@ interface MealRecordCardProps {
 }
 
 export function MealRecordCard({ record, onPress }: MealRecordCardProps) {
+    const getFoodById = useMasterStore(s => s.getFoodById);
+    const [foodIcons, setFoodIcons] = useState<string[]>([]);
+
+    useEffect(() => {
+        (async () => {
+            const foods = await getMealRecordFoodsByRecordId(record.id);
+            const icons = foods
+                .map(f => {
+                    const master = getFoodById(f.foodId);
+                    return master ? master.iconKey : null;
+                })
+                .filter((icon): icon is string => icon !== null);
+            setFoodIcons(icons);
+        })();
+    }, [record.id]);
+
     return (
         <TouchableOpacity
             style={styles.card}
@@ -24,6 +42,15 @@ export function MealRecordCard({ record, onPress }: MealRecordCardProps) {
                         <Text style={styles.timeText}>{record.time}</Text>
                     )}
                 </View>
+
+                {/* 食材アイコン一覧 */}
+                {foodIcons.length > 0 && (
+                    <View style={styles.foodIconRow}>
+                        {foodIcons.map((icon, i) => (
+                            <Text key={i} style={styles.foodIcon}>{icon}</Text>
+                        ))}
+                    </View>
+                )}
 
                 {record.note && (
                     <Text style={styles.note} numberOfLines={1}>
@@ -78,6 +105,15 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontWeight: '700',
         color: '#333',
+    },
+    foodIconRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 4,
+        marginTop: 4,
+    },
+    foodIcon: {
+        fontSize: 18,
     },
     note: {
         fontSize: 12,

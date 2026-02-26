@@ -2,6 +2,7 @@ import BottomSheet from '@gorhom/bottom-sheet';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DayDetailBottomSheet } from '../src/components/bottomSheet/DayDetailBottomSheet';
 import { CalendarHeader } from '../src/components/calendar/CalendarHeader';
@@ -15,6 +16,8 @@ import {
     getToday
 } from '../src/utils/date';
 
+const SWIPE_THRESHOLD = 50;
+
 export default function HomeScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
@@ -25,7 +28,6 @@ export default function HomeScreen() {
     const setSelectedDate = useUIStore(s => s.setSelectedDate);
     const setVisibleMonth = useUIStore(s => s.setVisibleMonth);
 
-    const mealRecords = useRecordStore(s => s.mealRecords);
     const calendarSummaries = useRecordStore(s => s.calendarSummaries);
     const loadByMonth = useRecordStore(s => s.loadByMonth);
     const getRecordsByDate = useRecordStore(s => s.getRecordsByDate);
@@ -53,7 +55,7 @@ export default function HomeScreen() {
 
     const handleDateSelect = useCallback((date: string) => {
         setSelectedDate(date);
-        bottomSheetRef.current?.snapToIndex(1); // half
+        bottomSheetRef.current?.snapToIndex(1);
     }, []);
 
     const handleAddRecord = useCallback(() => {
@@ -70,11 +72,21 @@ export default function HomeScreen() {
         });
     }, [selectedDate]);
 
+    // スワイプで月移動
+    const swipeGesture = Gesture.Pan()
+        .activeOffsetX([-30, 30])
+        .onEnd((e) => {
+            if (e.translationX > SWIPE_THRESHOLD) {
+                handlePrevMonth();
+            } else if (e.translationX < -SWIPE_THRESHOLD) {
+                handleNextMonth();
+            }
+        });
+
     return (
         <View style={[styles.container, { paddingTop: insets.top }]}>
-            {/* ヘッダー + ナビゲーションメニュー */}
+            {/* ナビゲーションメニュー（タイトル削除） */}
             <View style={styles.topBar}>
-                <Text style={styles.appTitle}>🍼 Baby Food Logger</Text>
                 <View style={styles.menuButtons}>
                     <TouchableOpacity
                         style={styles.menuButton}
@@ -116,12 +128,16 @@ export default function HomeScreen() {
                 onNextMonth={handleNextMonth}
                 onGoToday={handleGoToday}
             />
-            <MonthCalendar
-                visibleMonth={visibleMonth}
-                selectedDate={selectedDate}
-                summaries={calendarSummaries}
-                onDateSelect={handleDateSelect}
-            />
+            <GestureDetector gesture={swipeGesture}>
+                <View>
+                    <MonthCalendar
+                        visibleMonth={visibleMonth}
+                        selectedDate={selectedDate}
+                        summaries={calendarSummaries}
+                        onDateSelect={handleDateSelect}
+                    />
+                </View>
+            </GestureDetector>
 
             {/* ボトムシート */}
             <DayDetailBottomSheet
@@ -142,15 +158,10 @@ const styles = StyleSheet.create({
     },
     topBar: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
+        justifyContent: 'flex-end',
         alignItems: 'center',
         paddingHorizontal: 16,
         paddingVertical: 8,
-    },
-    appTitle: {
-        fontSize: 18,
-        fontWeight: '800',
-        color: '#FF8C94',
     },
     menuButtons: {
         flexDirection: 'row',

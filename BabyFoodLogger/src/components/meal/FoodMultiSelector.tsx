@@ -58,7 +58,7 @@ export function FoodMultiSelector({
                     style={styles.addFoodButton}
                     onPress={() => router.push('/foods/edit')}
                 >
-                    <Text style={styles.addFoodButtonText}>＋ 追加</Text>
+                    <Text style={styles.addFoodButtonText}>＋ 食材・料理を追加</Text>
                 </TouchableOpacity>
             </View>
 
