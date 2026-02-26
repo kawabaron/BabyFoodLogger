@@ -76,7 +76,7 @@ function PickerColumn({
         if (scrollRef.current && selectedIndex >= 0) {
             scrollRef.current.scrollTo({ y: selectedIndex * itemHeight, animated: false });
         }
-    }, []);
+    }, [selectedIndex]);
 
     const handleMomentumEnd = (e: any) => {
         const y = e.nativeEvent.contentOffset.y;
@@ -158,6 +158,7 @@ export default function MealEditScreen() {
     const [photos, setPhotos] = useState<Array<{ uri: string; id?: string }>>([]);
     const [showFoodSelector, setShowFoodSelector] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [isDataLoaded, setIsDataLoaded] = useState(!isEditing); // 新規時は即true、編集時はデータ読込後true
 
     const dateOptions = useMemo(() => generateDateOptions(selectedDate), [selectedDate]);
 
@@ -198,6 +199,7 @@ export default function MealEditScreen() {
                     const photoAssets = await getPhotosByIds(record.photoIds);
                     setPhotos(photoAssets.map(p => ({ uri: p.localUri, id: p.id })));
                 }
+                setIsDataLoaded(true);
             })();
         }
     }, [params.id]);
@@ -286,23 +288,25 @@ export default function MealEditScreen() {
                 {/* 日時ピッカー（iOS風ドラムロール） */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>📅 日時</Text>
-                    <View style={styles.pickerContainer}>
-                        <PickerColumn
-                            items={dateOptions}
-                            selectedIndex={30}
-                            onSelect={i => setSelectedDate(dateOptions[i].value)}
-                        />
-                        <PickerColumn
-                            items={hourItems}
-                            selectedIndex={selectedHour}
-                            onSelect={i => setSelectedHour(i)}
-                        />
-                        <PickerColumn
-                            items={minuteItems}
-                            selectedIndex={selectedMinuteIndex}
-                            onSelect={i => setSelectedMinute(MINUTES[i])}
-                        />
-                    </View>
+                    {isDataLoaded && (
+                        <View style={styles.pickerContainer}>
+                            <PickerColumn
+                                items={dateOptions}
+                                selectedIndex={30}
+                                onSelect={i => setSelectedDate(dateOptions[i].value)}
+                            />
+                            <PickerColumn
+                                items={hourItems}
+                                selectedIndex={selectedHour}
+                                onSelect={i => setSelectedHour(i)}
+                            />
+                            <PickerColumn
+                                items={minuteItems}
+                                selectedIndex={selectedMinuteIndex}
+                                onSelect={i => setSelectedMinute(MINUTES[i])}
+                            />
+                        </View>
+                    )}
                 </View>
 
                 {/* 食材選択 */}
