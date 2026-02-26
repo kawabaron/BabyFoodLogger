@@ -43,10 +43,11 @@ export async function getMonthCalendarSummaries(
         const placeholders = recordIds.map(() => '?').join(',');
 
         const foods = await db.getAllAsync<{
+            foodId: string;
             iconKey: string;
             isFirstTime: number;
         }>(
-            `SELECT fm.iconKey, mrf.isFirstTime
+            `SELECT fm.id as foodId, fm.iconKey, mrf.isFirstTime
        FROM meal_record_foods mrf
        INNER JOIN food_masters fm ON mrf.foodId = fm.id
        WHERE mrf.mealRecordId IN (${placeholders})
@@ -56,11 +57,11 @@ export async function getMonthCalendarSummaries(
 
         // 代表アイコン（最大3個、ユニーク）
         const iconSet = new Set<string>();
-        const representativeIcons: string[] = [];
+        const representativeFoods: { id: string; iconKey: string }[] = [];
         for (const f of foods) {
-            if (!iconSet.has(f.iconKey) && representativeIcons.length < 3) {
+            if (!iconSet.has(f.iconKey) && representativeFoods.length < 3) {
                 iconSet.add(f.iconKey);
-                representativeIcons.push(f.iconKey);
+                representativeFoods.push({ id: f.foodId, iconKey: f.iconKey });
             }
         }
 
@@ -69,7 +70,7 @@ export async function getMonthCalendarSummaries(
         summaries.set(date, {
             date,
             mealCount,
-            representativeFoodIconKeys: representativeIcons,
+            representativeFoods,
             hasFirstTriedFood,
             hasAllergyMemo,
         });

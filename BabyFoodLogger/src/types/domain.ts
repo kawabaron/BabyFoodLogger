@@ -117,7 +117,7 @@ export type ChildProfile = {
 export type CalendarDaySummary = {
   date: string;
   mealCount: number;
-  representativeFoodIconKeys: string[];
+  representativeFoods: { id: string; iconKey: string }[];
   hasFirstTriedFood: boolean;
   hasAllergyMemo: boolean;
 };

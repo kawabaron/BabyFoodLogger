@@ -1,6 +1,7 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FoodIcon } from '../../src/components/common/FoodIcon';
 import { getDatabase } from '../../src/repositories/database';
 import { useMasterStore } from '../../src/stores/masterStore';
 import type { FoodCategory, FoodMaster } from '../../src/types/domain';
@@ -122,7 +123,8 @@ export default function FoodManageScreen() {
                     const stats = foodStats.get(item.id);
                     return (
                         <View style={styles.foodItem}>
-                            <Text style={styles.foodIcon}>{item.iconKey}</Text>
+                            {/* Text style={styles.foodIcon}>{item.iconKey}</Text> */}
+                            <FoodIcon foodId={item.id} iconKey={item.iconKey} size={28} style={styles.foodIconWrapper} />
                             <View style={styles.foodInfo}>
                                 <Text style={styles.foodName}>{item.name}</Text>
                                 <Text style={styles.foodCategory}>
@@ -188,6 +190,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.04, shadowRadius: 2, elevation: 1,
     },
     foodIcon: { fontSize: 28, marginRight: 12 },
+    foodIconWrapper: { marginRight: 12 },
     foodInfo: { flex: 1 },
     foodName: { fontSize: 16, fontWeight: '600', color: '#333' },
     foodCategory: { fontSize: 12, color: '#999', marginTop: 2 },

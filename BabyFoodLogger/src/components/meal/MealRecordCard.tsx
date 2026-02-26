@@ -3,6 +3,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { getMealRecordFoodsByRecordId } from '../../repositories/mealRecordRepository';
 import { useMasterStore } from '../../stores/masterStore';
 import type { MealRecord } from '../../types/domain';
+import { FoodIcon } from '../common/FoodIcon';
 
 interface MealRecordCardProps {
     record: MealRecord;
@@ -11,7 +12,7 @@ interface MealRecordCardProps {
 
 export function MealRecordCard({ record, onPress }: MealRecordCardProps) {
     const getFoodById = useMasterStore(s => s.getFoodById);
-    const [foodIcons, setFoodIcons] = useState<string[]>([]);
+    const [foodIcons, setFoodIcons] = useState<{ id: string, iconKey: string }[]>([]);
 
     useEffect(() => {
         (async () => {
@@ -19,9 +20,9 @@ export function MealRecordCard({ record, onPress }: MealRecordCardProps) {
             const icons = foods
                 .map(f => {
                     const master = getFoodById(f.foodId);
-                    return master ? master.iconKey : null;
+                    return master ? { id: f.foodId, iconKey: master.iconKey } : null;
                 })
-                .filter((icon): icon is string => icon !== null);
+                .filter((icon): icon is { id: string, iconKey: string } => icon !== null);
             setFoodIcons(icons);
         })();
     }, [record.id]);
@@ -46,8 +47,8 @@ export function MealRecordCard({ record, onPress }: MealRecordCardProps) {
                 {/* 食材アイコン一覧 */}
                 {foodIcons.length > 0 && (
                     <View style={styles.foodIconRow}>
-                        {foodIcons.map((icon, i) => (
-                            <Text key={i} style={styles.foodIcon}>{icon}</Text>
+                        {foodIcons.map((f, i) => (
+                            <FoodIcon key={i} foodId={f.id} iconKey={f.iconKey} size={18} />
                         ))}
                     </View>
                 )}

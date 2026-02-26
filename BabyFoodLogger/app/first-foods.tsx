@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { EmptyState } from '../src/components/common/EmptyState';
+import { FoodIcon } from '../src/components/common/FoodIcon';
 import { getDatabase } from '../src/repositories/database';
 import { DEFAULT_CHILD_ID, PREFERENCE_COLORS, PREFERENCE_ICONS, PREFERENCE_LABELS } from '../src/utils/constants';
 
@@ -87,7 +88,7 @@ export default function FirstFoodsScreen() {
                 keyExtractor={item => item.foodId}
                 renderItem={({ item }) => (
                     <View style={styles.itemCard}>
-                        <Text style={styles.itemIcon}>{item.iconKey}</Text>
+                        <FoodIcon foodId={item.foodId} iconKey={item.iconKey} size={32} style={styles.itemIconWrapper} />
                         <View style={styles.itemInfo}>
                             <Text style={styles.itemName}>{item.foodName}</Text>
                             <Text style={styles.itemDate}>{item.firstDate}</Text>
@@ -132,7 +133,7 @@ const styles = StyleSheet.create({
         shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.05, shadowRadius: 3, elevation: 1,
     },
-    itemIcon: { fontSize: 32, marginRight: 12 },
+    itemIconWrapper: { marginRight: 12 },
     itemInfo: { flex: 1 },
     itemName: { fontSize: 15, fontWeight: '700', color: '#333' },
     itemDate: { fontSize: 12, color: '#999', marginTop: 2 },

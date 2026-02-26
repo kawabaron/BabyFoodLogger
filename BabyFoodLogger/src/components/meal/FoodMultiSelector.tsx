@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 
 import { useMasterStore } from '../../stores/masterStore';
 import type { FoodCategory, FoodMaster } from '../../types/domain';
 import { FOOD_CATEGORY_ICONS, FOOD_CATEGORY_LABELS } from '../../utils/constants';
+import { FoodIcon } from '../common/FoodIcon';
 
 interface FoodMultiSelectorProps {
     selectedFoodIds: string[];
@@ -134,7 +135,7 @@ export function FoodMultiSelector({
                                         onPress={() => onToggleFood(food.id)}
                                         activeOpacity={0.6}
                                     >
-                                        <Text style={styles.foodItemIcon}>{food.iconKey}</Text>
+                                        <FoodIcon foodId={food.id} iconKey={food.iconKey} size={22} />
                                         <Text
                                             style={[styles.foodItemName, isSelected && styles.selectedFoodItemName]}
                                             numberOfLines={1}
@@ -276,9 +277,6 @@ const styles = StyleSheet.create({
     selectedFoodItem: {
         backgroundColor: '#FFF0F3',
         borderColor: '#FF8C94',
-    },
-    foodItemIcon: {
-        fontSize: 22,
     },
     foodItemName: {
         fontSize: 15,

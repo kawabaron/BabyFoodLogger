@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { CalendarDaySummary } from '../../types/domain';
 import { getToday } from '../../utils/date';
+import { FoodIcon } from '../common/FoodIcon';
 
 interface CalendarDayCellProps {
     date: string;          // YYYY-MM-DD
@@ -49,8 +50,8 @@ export function CalendarDayCell({
                 <View style={styles.infoContainer}>
                     {/* 代表アイコン（最大3つ） */}
                     <View style={styles.iconsRow}>
-                        {summary!.representativeFoodIconKeys.map((icon, i) => (
-                            <Text key={i} style={styles.foodIcon}>{icon}</Text>
+                        {summary!.representativeFoods.map((f, i) => (
+                            <FoodIcon key={f.id + i} foodId={f.id} iconKey={f.iconKey} size={12} />
                         ))}
                     </View>
 

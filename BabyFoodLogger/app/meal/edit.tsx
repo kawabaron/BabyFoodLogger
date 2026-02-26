@@ -12,6 +12,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { FoodIcon } from '../../src/components/common/FoodIcon';
 import { FoodMultiSelector } from '../../src/components/meal/FoodMultiSelector';
 import { PhotoPickerField } from '../../src/components/meal/PhotoPickerField';
 import { PreferenceSelector } from '../../src/components/meal/PreferenceSelector';
@@ -327,7 +328,10 @@ export default function MealEditScreen() {
                             return (
                                 <View key={foodId} style={styles.foodCard}>
                                     <View style={styles.foodCardHeader}>
-                                        <Text style={styles.foodCardName}>{food.iconKey} {food.name}</Text>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                            <FoodIcon foodId={food.id} iconKey={food.iconKey} size={20} />
+                                            <Text style={styles.foodCardName}>{food.name}</Text>
+                                        </View>
                                         <TouchableOpacity onPress={() => handleToggleFood(foodId)}>
                                             <Text style={styles.removeFoodText}>✕</Text>
                                         </TouchableOpacity>
