@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useMasterStore } from '../../stores/masterStore';
@@ -10,7 +11,7 @@ interface FoodMultiSelectorProps {
 }
 
 const CATEGORIES: FoodCategory[] = [
-    'grain', 'vegetable', 'fruit', 'protein', 'dairy', 'seafood', 'seasoning', 'other',
+    'grain', 'vegetable', 'fruit', 'protein', 'dairy', 'seafood', 'dish', 'seasoning', 'other',
 ];
 
 export function FoodMultiSelector({
@@ -18,6 +19,7 @@ export function FoodMultiSelector({
     onToggleFood,
 }: FoodMultiSelectorProps) {
     const foods = useMasterStore(s => s.foods);
+    const router = useRouter();
     const [searchText, setSearchText] = useState('');
     const [activeCategory, setActiveCategory] = useState<FoodCategory | 'all'>('all');
 
@@ -49,12 +51,23 @@ export function FoodMultiSelector({
 
     return (
         <View style={styles.container}>
+            {/* ヘッダー */}
+            <View style={styles.titleRow}>
+                <Text style={styles.titleText}>食材・料理一覧</Text>
+                <TouchableOpacity
+                    style={styles.addFoodButton}
+                    onPress={() => router.push('/foods/edit')}
+                >
+                    <Text style={styles.addFoodButtonText}>＋ 追加</Text>
+                </TouchableOpacity>
+            </View>
+
             {/* 検索バー */}
             <View style={styles.searchContainer}>
                 <Text style={styles.searchIcon}>🔍</Text>
                 <TextInput
                     style={styles.searchInput}
-                    placeholder="食材を検索..."
+                    placeholder="食材・料理を検索..."
                     value={searchText}
                     onChangeText={setSearchText}
                     placeholderTextColor="#999"
@@ -138,7 +151,7 @@ export function FoodMultiSelector({
                     </View>
                 ))}
                 {filteredFoods.length === 0 && (
-                    <Text style={styles.noResults}>該当する食材がありません</Text>
+                    <Text style={styles.noResults}>該当する食材・料理がありません</Text>
                 )}
             </ScrollView>
         </View>
@@ -148,6 +161,29 @@ export function FoodMultiSelector({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+    },
+    titleRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+    },
+    titleText: {
+        fontSize: 17,
+        fontWeight: '700',
+        color: '#333',
+    },
+    addFoodButton: {
+        backgroundColor: '#34C759',
+        paddingHorizontal: 14,
+        paddingVertical: 7,
+        borderRadius: 18,
+    },
+    addFoodButtonText: {
+        color: '#FFF',
+        fontSize: 13,
+        fontWeight: '700',
     },
     searchContainer: {
         flexDirection: 'row',
@@ -165,7 +201,7 @@ const styles = StyleSheet.create({
     },
     searchInput: {
         flex: 1,
-        fontSize: 15,
+        fontSize: 16,
         color: '#333',
     },
     clearButton: {
@@ -212,7 +248,7 @@ const styles = StyleSheet.create({
         paddingBottom: 20,
     },
     categoryHeader: {
-        fontSize: 14,
+        fontSize: 15,
         fontWeight: '700',
         color: '#666',
         paddingHorizontal: 16,
@@ -223,38 +259,39 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
         paddingHorizontal: 12,
-        gap: 6,
-        paddingVertical: 6,
+        gap: 8,
+        paddingVertical: 8,
     },
     foodItem: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#FFF',
         borderRadius: 10,
-        paddingHorizontal: 10,
-        paddingVertical: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
         borderWidth: 1,
         borderColor: '#E8E8E8',
-        gap: 4,
+        gap: 6,
     },
     selectedFoodItem: {
         backgroundColor: '#FFF0F3',
         borderColor: '#FF8C94',
     },
     foodItemIcon: {
-        fontSize: 18,
+        fontSize: 22,
     },
     foodItemName: {
-        fontSize: 13,
+        fontSize: 15,
         color: '#333',
-        maxWidth: 80,
+        maxWidth: 100,
+        fontWeight: '500',
     },
     selectedFoodItemName: {
         color: '#FF8C94',
         fontWeight: '700',
     },
     checkMark: {
-        fontSize: 14,
+        fontSize: 16,
         color: '#FF8C94',
         fontWeight: '700',
     },

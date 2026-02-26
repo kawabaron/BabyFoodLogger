@@ -55,6 +55,7 @@ export const FOOD_CATEGORY_LABELS: Record<FoodCategory, string> = {
     dairy: '乳製品',
     seafood: '魚介類',
     seasoning: '調味料',
+    dish: '料理',
     other: 'その他',
 };
 
@@ -66,6 +67,7 @@ export const FOOD_CATEGORY_ICONS: Record<FoodCategory, string> = {
     dairy: '🥛',
     seafood: '🐟',
     seasoning: '🧂',
+    dish: '🍳',
     other: '📦',
 };
 

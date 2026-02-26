@@ -26,6 +26,7 @@ export type FoodCategory =
   | 'dairy'
   | 'seafood'
   | 'seasoning'
+  | 'dish'
   | 'other';
 
 // ===== Master Data =====
@@ -56,7 +57,7 @@ export type MealRecord = {
   date: string;              // YYYY-MM-DD
   mealTiming: MealTiming;
   time?: string;             // HH:mm
-  babyFoodTypeId: string;
+  babyFoodTypeId?: string;
   note?: string;
   allergyReactionMemo?: string;
   appetiteLevel?: 'low' | 'normal' | 'high';
@@ -127,7 +128,7 @@ export type MealRecordInput = {
   date: string;
   mealTiming: MealTiming;
   time?: string;
-  babyFoodTypeId: string;
+  babyFoodTypeId?: string;
   note?: string;
   allergyReactionMemo?: string;
   appetiteLevel?: 'low' | 'normal' | 'high';

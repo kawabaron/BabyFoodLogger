@@ -20,7 +20,7 @@ export default function RootLayout() {
         setIsReady(true);
       } catch (error) {
         console.error('App initialization failed:', error);
-        setIsReady(true); // エラーでも表示は進める
+        setIsReady(true);
       }
     })();
   }, []);
@@ -41,6 +41,7 @@ export default function RootLayout() {
           headerStyle: { backgroundColor: '#FFF' },
           headerTintColor: '#FF8C94',
           headerTitleStyle: { fontWeight: '700', color: '#333' },
+          headerBackTitle: 'カレンダー',
         }}
       >
         <Stack.Screen
@@ -62,6 +63,17 @@ export default function RootLayout() {
           options={{
             presentation: 'modal',
             title: '食材選択',
+          }}
+        />
+        <Stack.Screen
+          name="foods/manage"
+          options={{ title: '食材・料理管理' }}
+        />
+        <Stack.Screen
+          name="foods/edit"
+          options={{
+            presentation: 'modal',
+            title: '食材・料理 追加/編集',
           }}
         />
         <Stack.Screen

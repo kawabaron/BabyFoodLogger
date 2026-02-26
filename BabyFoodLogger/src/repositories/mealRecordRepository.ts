@@ -57,7 +57,7 @@ export async function addMealRecord(
       appetiteLevel, photoIds, createdAt, updatedAt)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         id, DEFAULT_CHILD_ID, input.date, input.mealTiming, input.time ?? null,
-        input.babyFoodTypeId, input.note ?? null, input.allergyReactionMemo ?? null,
+        input.babyFoodTypeId ?? null, input.note ?? null, input.allergyReactionMemo ?? null,
         input.appetiteLevel ?? null, JSON.stringify(photoIds), now, now
     );
 
@@ -92,7 +92,7 @@ export async function updateMealRecord(
      photoIds = ?, updatedAt = ?
      WHERE id = ?`,
         input.date, input.mealTiming, input.time ?? null,
-        input.babyFoodTypeId, input.note ?? null, input.allergyReactionMemo ?? null,
+        input.babyFoodTypeId ?? null, input.note ?? null, input.allergyReactionMemo ?? null,
         input.appetiteLevel ?? null, JSON.stringify(photoIds), now, id
     );
 

@@ -78,6 +78,12 @@ export default function HomeScreen() {
                 <View style={styles.menuButtons}>
                     <TouchableOpacity
                         style={styles.menuButton}
+                        onPress={() => router.push('/foods/manage')}
+                    >
+                        <Text style={styles.menuButtonText}>🥗</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.menuButton}
                         onPress={() => router.push('/first-foods')}
                     >
                         <Text style={styles.menuButtonText}>★</Text>

@@ -32,6 +32,18 @@ const TIMINGS: MealTiming[] = ['morning', 'lunch', 'dinner', 'snack'];
 const AMOUNTS = ['small', 'medium', 'large'] as const;
 const APPETITES = ['low', 'normal', 'high'] as const;
 
+// 5分刻みの時刻オプション生成
+function generateTimeOptions(): string[] {
+    const options: string[] = [];
+    for (let h = 0; h < 24; h++) {
+        for (let m = 0; m < 60; m += 5) {
+            options.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+        }
+    }
+    return options;
+}
+const TIME_OPTIONS = generateTimeOptions();
+
 export default function MealEditScreen() {
     const router = useRouter();
     const params = useLocalSearchParams<{ id?: string; date?: string }>();
@@ -42,14 +54,13 @@ export default function MealEditScreen() {
     const deleteMealRecord = useRecordStore(s => s.deleteMealRecord);
     const refreshCalendarSummaries = useRecordStore(s => s.refreshCalendarSummaries);
     const visibleMonth = useUIStore(s => s.visibleMonth);
-    const babyFoodTypes = useMasterStore(s => s.babyFoodTypes);
     const getFoodByIdFn = useMasterStore(s => s.getFoodById);
 
     // Form state
     const [date, setDate] = useState(params.date || '');
     const [mealTiming, setMealTiming] = useState<MealTiming>('morning');
     const [time, setTime] = useState('');
-    const [babyFoodTypeId, setBabyFoodTypeId] = useState('');
+    const [showTimePicker, setShowTimePicker] = useState(false);
     const [note, setNote] = useState('');
     const [allergyMemo, setAllergyMemo] = useState('');
     const [appetiteLevel, setAppetiteLevel] = useState<'low' | 'normal' | 'high' | undefined>();
@@ -70,7 +81,6 @@ export default function MealEditScreen() {
                 setDate(record.date);
                 setMealTiming(record.mealTiming);
                 setTime(record.time || '');
-                setBabyFoodTypeId(record.babyFoodTypeId);
                 setNote(record.note || '');
                 setAllergyMemo(record.allergyReactionMemo || '');
                 setAppetiteLevel(record.appetiteLevel);
@@ -92,11 +102,6 @@ export default function MealEditScreen() {
                     setExistingPhotoIds(record.photoIds);
                 }
             })();
-        } else {
-            // 新規の場合、デフォルト離乳食種類を設定
-            if (babyFoodTypes.length > 0) {
-                setBabyFoodTypeId(babyFoodTypes[0].id);
-            }
         }
     }, [params.id]);
 
@@ -109,13 +114,8 @@ export default function MealEditScreen() {
     }, []);
 
     const handleSave = async () => {
-        // バリデーション
         if (!date) {
             Alert.alert('入力エラー', '日付は必須です');
-            return;
-        }
-        if (!babyFoodTypeId) {
-            Alert.alert('入力エラー', '離乳食の種類を選択してください');
             return;
         }
         if (selectedFoodIds.length === 0) {
@@ -133,7 +133,6 @@ export default function MealEditScreen() {
                 date,
                 mealTiming,
                 time: time || undefined,
-                babyFoodTypeId,
                 note: note || undefined,
                 allergyReactionMemo: allergyMemo || undefined,
                 appetiteLevel,
@@ -237,51 +236,58 @@ export default function MealEditScreen() {
                     </View>
                 </View>
 
-                {/* 時刻 */}
+                {/* 時刻（5分刻みスライダー） */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>⏰ 時刻（任意）</Text>
-                    <TextInput
-                        style={styles.textInput}
-                        value={time}
-                        onChangeText={setTime}
-                        placeholder="HH:mm"
-                        placeholderTextColor="#CCC"
-                    />
-                </View>
-
-                {/* 離乳食の種類 */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>🍽️ 離乳食の種類</Text>
-                    <View style={styles.chipRow}>
-                        {babyFoodTypes.map(bft => (
-                            <TouchableOpacity
-                                key={bft.id}
-                                style={[styles.chip, babyFoodTypeId === bft.id && styles.activeChip]}
-                                onPress={() => setBabyFoodTypeId(bft.id)}
-                            >
-                                <Text style={styles.chipIcon}>{bft.iconKey}</Text>
-                                <Text style={[styles.chipText, babyFoodTypeId === bft.id && styles.activeChipText]}>
-                                    {bft.name}
-                                </Text>
+                    <TouchableOpacity
+                        style={styles.timePickerButton}
+                        onPress={() => setShowTimePicker(!showTimePicker)}
+                    >
+                        <Text style={time ? styles.timePickerValue : styles.timePickerPlaceholder}>
+                            {time || 'タップして選択'}
+                        </Text>
+                        {time ? (
+                            <TouchableOpacity onPress={() => { setTime(''); setShowTimePicker(false); }}>
+                                <Text style={styles.clearTimeButton}>✕</Text>
                             </TouchableOpacity>
-                        ))}
-                    </View>
+                        ) : null}
+                    </TouchableOpacity>
+                    {showTimePicker && (
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            style={styles.timeSlider}
+                            contentContainerStyle={styles.timeSliderContent}
+                        >
+                            {TIME_OPTIONS.map(t => (
+                                <TouchableOpacity
+                                    key={t}
+                                    style={[styles.timeOption, time === t && styles.activeTimeOption]}
+                                    onPress={() => { setTime(t); setShowTimePicker(false); }}
+                                >
+                                    <Text style={[styles.timeOptionText, time === t && styles.activeTimeOptionText]}>
+                                        {t}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    )}
                 </View>
 
                 {/* 食材選択 */}
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>🥗 食材</Text>
+                        <Text style={styles.sectionTitle}>🥗 食材・料理</Text>
                         <TouchableOpacity
                             style={styles.selectFoodButton}
                             onPress={() => setShowFoodSelector(true)}
                         >
-                            <Text style={styles.selectFoodButtonText}>食材を選択</Text>
+                            <Text style={styles.selectFoodButtonText}>選択する</Text>
                         </TouchableOpacity>
                     </View>
 
                     {selectedFoodIds.length === 0 ? (
-                        <Text style={styles.placeholder}>食材を選択してください</Text>
+                        <Text style={styles.placeholder}>食材・料理を選択してください</Text>
                     ) : (
                         selectedFoodIds.map(foodId => {
                             const food = getFoodByIdFn(foodId);
@@ -505,6 +511,59 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     activeChipText: {
+        color: '#FFF',
+    },
+    // 時刻ピッカー
+    timePickerButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: '#F8F8F8',
+        borderRadius: 10,
+        paddingHorizontal: 14,
+        paddingVertical: 14,
+        borderWidth: 1,
+        borderColor: '#E8E8E8',
+    },
+    timePickerValue: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#333',
+    },
+    timePickerPlaceholder: {
+        fontSize: 15,
+        color: '#CCC',
+    },
+    clearTimeButton: {
+        fontSize: 16,
+        color: '#999',
+        padding: 4,
+    },
+    timeSlider: {
+        marginTop: 10,
+        maxHeight: 50,
+    },
+    timeSliderContent: {
+        gap: 6,
+        paddingVertical: 4,
+    },
+    timeOption: {
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        borderRadius: 10,
+        backgroundColor: '#F0F0F0',
+        minWidth: 60,
+        alignItems: 'center',
+    },
+    activeTimeOption: {
+        backgroundColor: '#FF8C94',
+    },
+    timeOptionText: {
+        fontSize: 14,
+        color: '#555',
+        fontWeight: '600',
+    },
+    activeTimeOptionText: {
         color: '#FFF',
     },
     selectFoodButton: {

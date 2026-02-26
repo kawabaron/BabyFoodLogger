@@ -1,5 +1,5 @@
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { MealRecord } from '../../types/domain';
 import { formatDateDisplay } from '../../utils/date';
@@ -21,13 +21,12 @@ export function DayDetailBottomSheet({
     onEditRecord,
     sheetRef,
 }: DayDetailBottomSheetProps) {
-    const snapPoints = useMemo(() => ['12%', '45%', '90%'], []);
-    const internalRef = useRef<BottomSheet>(null);
-    const ref = sheetRef || internalRef;
+    // カレンダーと被らないよう、snap位置を調整
+    const snapPoints = useMemo(() => [80, '40%', '92%'], []);
 
     return (
         <BottomSheet
-            ref={ref}
+            ref={sheetRef}
             index={0}
             snapPoints={snapPoints}
             backgroundStyle={styles.sheetBackground}

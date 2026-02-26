@@ -1,6 +1,6 @@
-import { v4 as uuidv4 } from 'uuid';
+import * as Crypto from 'expo-crypto';
 
 /** UUID v4 を生成 */
 export function generateId(): string {
-    return uuidv4();
+    return Crypto.randomUUID();
 }

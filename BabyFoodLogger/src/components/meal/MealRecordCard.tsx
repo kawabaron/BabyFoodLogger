@@ -11,7 +11,7 @@ interface MealRecordCardProps {
 
 export function MealRecordCard({ record, onPress }: MealRecordCardProps) {
     const getBabyFoodTypeById = useMasterStore(s => s.getBabyFoodTypeById);
-    const babyFoodType = getBabyFoodTypeById(record.babyFoodTypeId);
+    const babyFoodType = record.babyFoodTypeId ? getBabyFoodTypeById(record.babyFoodTypeId) : undefined;
 
     return (
         <TouchableOpacity
