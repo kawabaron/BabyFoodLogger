@@ -55,7 +55,7 @@ export type MealRecord = {
   id: string;
   childId: string;
   date: string;              // YYYY-MM-DD
-  mealTiming: MealTiming;
+  mealTiming?: MealTiming;
   time?: string;             // HH:mm
   babyFoodTypeId?: string;
   note?: string;
@@ -126,7 +126,7 @@ export type CalendarDaySummary = {
 
 export type MealRecordInput = {
   date: string;
-  mealTiming: MealTiming;
+  mealTiming?: MealTiming;
   time?: string;
   babyFoodTypeId?: string;
   note?: string;

@@ -1,8 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useMasterStore } from '../../stores/masterStore';
 import type { MealRecord } from '../../types/domain';
-import { MEAL_TIMING_ICONS, MEAL_TIMING_LABELS } from '../../utils/constants';
 
 interface MealRecordCardProps {
     record: MealRecord;
@@ -10,9 +8,6 @@ interface MealRecordCardProps {
 }
 
 export function MealRecordCard({ record, onPress }: MealRecordCardProps) {
-    const getBabyFoodTypeById = useMasterStore(s => s.getBabyFoodTypeById);
-    const babyFoodType = record.babyFoodTypeId ? getBabyFoodTypeById(record.babyFoodTypeId) : undefined;
-
     return (
         <TouchableOpacity
             style={styles.card}
@@ -20,26 +15,15 @@ export function MealRecordCard({ record, onPress }: MealRecordCardProps) {
             activeOpacity={0.7}
         >
             <View style={styles.leftSection}>
-                <Text style={styles.timingIcon}>
-                    {MEAL_TIMING_ICONS[record.mealTiming]}
-                </Text>
+                <Text style={styles.timingIcon}>🍽️</Text>
             </View>
 
             <View style={styles.mainSection}>
                 <View style={styles.header}>
-                    <Text style={styles.timingLabel}>
-                        {MEAL_TIMING_LABELS[record.mealTiming]}
-                    </Text>
                     {record.time && (
                         <Text style={styles.timeText}>{record.time}</Text>
                     )}
                 </View>
-
-                {babyFoodType && (
-                    <Text style={styles.babyFoodType}>
-                        {babyFoodType.iconKey} {babyFoodType.name}
-                    </Text>
-                )}
 
                 {record.note && (
                     <Text style={styles.note} numberOfLines={1}>
@@ -90,19 +74,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 8,
     },
-    timingLabel: {
+    timeText: {
         fontSize: 15,
         fontWeight: '700',
         color: '#333',
-    },
-    timeText: {
-        fontSize: 13,
-        color: '#999',
-    },
-    babyFoodType: {
-        fontSize: 13,
-        color: '#666',
-        marginTop: 2,
     },
     note: {
         fontSize: 12,

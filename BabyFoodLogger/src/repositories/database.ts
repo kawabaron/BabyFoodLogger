@@ -3,17 +3,17 @@ import * as SQLite from 'expo-sqlite';
 let db: SQLite.SQLiteDatabase | null = null;
 
 export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
-    if (db) return db;
-    db = await SQLite.openDatabaseAsync('babyfoodlogger.db');
-    await db.execAsync('PRAGMA journal_mode = WAL;');
-    await db.execAsync('PRAGMA foreign_keys = ON;');
-    return db;
+  if (db) return db;
+  db = await SQLite.openDatabaseAsync('babyfoodlogger.db');
+  await db.execAsync('PRAGMA journal_mode = WAL;');
+  await db.execAsync('PRAGMA foreign_keys = ON;');
+  return db;
 }
 
 export async function initializeDatabase(): Promise<void> {
-    const database = await getDatabase();
+  const database = await getDatabase();
 
-    await database.execAsync(`
+  await database.execAsync(`
     CREATE TABLE IF NOT EXISTS food_masters (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -36,9 +36,9 @@ export async function initializeDatabase(): Promise<void> {
       id TEXT PRIMARY KEY,
       childId TEXT NOT NULL,
       date TEXT NOT NULL,
-      mealTiming TEXT NOT NULL,
+      mealTiming TEXT,
       time TEXT,
-      babyFoodTypeId TEXT NOT NULL,
+      babyFoodTypeId TEXT,
       note TEXT,
       allergyReactionMemo TEXT,
       appetiteLevel TEXT,
@@ -93,4 +93,44 @@ export async function initializeDatabase(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_meal_record_foods_foodId ON meal_record_foods(foodId);
     CREATE INDEX IF NOT EXISTS idx_food_preference_profiles_childId ON food_preference_profiles(childId);
   `);
+
+  // 既存テーブルのスキーマ移行（NOT NULL → nullable）
+  // SQLiteはALTER COLUMN未対応なので、テーブル再作成で対応
+  try {
+    // meal_recordsテーブルが古いスキーマ（NOT NULL制約あり）かチェック
+    const tableInfo = await database.getAllAsync<{ name: string; notnull: number }>(
+      "PRAGMA table_info(meal_records)"
+    );
+    const mealTimingCol = tableInfo.find(c => c.name === 'mealTiming');
+    const babyFoodTypeCol = tableInfo.find(c => c.name === 'babyFoodTypeId');
+
+    if ((mealTimingCol && mealTimingCol.notnull === 1) || (babyFoodTypeCol && babyFoodTypeCol.notnull === 1)) {
+      await database.execAsync(`
+        CREATE TABLE IF NOT EXISTS meal_records_new (
+          id TEXT PRIMARY KEY,
+          childId TEXT NOT NULL,
+          date TEXT NOT NULL,
+          mealTiming TEXT,
+          time TEXT,
+          babyFoodTypeId TEXT,
+          note TEXT,
+          allergyReactionMemo TEXT,
+          appetiteLevel TEXT,
+          photoIds TEXT NOT NULL DEFAULT '[]',
+          createdBy TEXT,
+          createdAt TEXT NOT NULL,
+          updatedAt TEXT NOT NULL,
+          deletedAt TEXT
+        );
+        INSERT INTO meal_records_new SELECT * FROM meal_records;
+        DROP TABLE meal_records;
+        ALTER TABLE meal_records_new RENAME TO meal_records;
+        CREATE INDEX IF NOT EXISTS idx_meal_records_date ON meal_records(date);
+        CREATE INDEX IF NOT EXISTS idx_meal_records_childId ON meal_records(childId);
+      `);
+    }
+  } catch (e) {
+    // テーブルが空 or 未作成の場合は無視
+    console.log('Migration check:', e);
+  }
 }
