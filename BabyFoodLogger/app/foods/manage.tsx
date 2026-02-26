@@ -4,7 +4,14 @@ import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react
 import { getDatabase } from '../../src/repositories/database';
 import { useMasterStore } from '../../src/stores/masterStore';
 import type { FoodCategory, FoodMaster } from '../../src/types/domain';
-import { FOOD_CATEGORY_ICONS, FOOD_CATEGORY_LABELS } from '../../src/utils/constants';
+import { DEFAULT_CHILD_ID, FOOD_CATEGORY_ICONS, FOOD_CATEGORY_LABELS, PREFERENCE_COLORS, PREFERENCE_ICONS, PREFERENCE_LABELS } from '../../src/utils/constants';
+
+type FoodStats = {
+    totalTriedCount: number;
+    firstTriedDate?: string;
+    lastTriedDate?: string;
+    latestPreference?: string;
+};
 
 const CATEGORIES: (FoodCategory | 'all')[] = [
     'all', 'grain', 'vegetable', 'fruit', 'protein', 'dairy', 'seafood', 'dish', 'seasoning', 'other',
@@ -15,13 +22,54 @@ export default function FoodManageScreen() {
     const foods = useMasterStore(s => s.foods);
     const loadMasters = useMasterStore(s => s.loadMasters);
     const [activeCategory, setActiveCategory] = useState<FoodCategory | 'all'>('all');
+    const [foodStats, setFoodStats] = useState<Map<string, FoodStats>>(new Map());
 
-    // 画面フォーカス時にリロード
     useFocusEffect(
         useCallback(() => {
             loadMasters();
+            loadFoodStats();
         }, [])
     );
+
+    const loadFoodStats = async () => {
+        const db = await getDatabase();
+
+        // 摂取回数・初回・最終日を取得
+        const stats = await db.getAllAsync<{
+            foodId: string;
+            totalCount: number;
+            firstDate: string;
+            lastDate: string;
+        }>(
+            `SELECT mrf.foodId,
+              COUNT(*) as totalCount,
+              MIN(mr.date) as firstDate,
+              MAX(mr.date) as lastDate
+       FROM meal_record_foods mrf
+       INNER JOIN meal_records mr ON mrf.mealRecordId = mr.id
+       WHERE mr.deletedAt IS NULL AND mr.childId = ?
+       GROUP BY mrf.foodId`,
+            DEFAULT_CHILD_ID
+        );
+
+        // 好み情報
+        const prefs = await db.getAllAsync<{ foodId: string; latestPreference: string }>(
+            `SELECT foodId, latestPreference FROM food_preference_profiles WHERE childId = ?`,
+            DEFAULT_CHILD_ID
+        );
+        const prefMap = new Map(prefs.map(p => [p.foodId, p.latestPreference]));
+
+        const statsMap = new Map<string, FoodStats>();
+        for (const s of stats) {
+            statsMap.set(s.foodId, {
+                totalTriedCount: s.totalCount,
+                firstTriedDate: s.firstDate,
+                lastTriedDate: s.lastDate,
+                latestPreference: prefMap.get(s.foodId),
+            });
+        }
+        setFoodStats(statsMap);
+    };
 
     const filteredFoods = activeCategory === 'all'
         ? foods
@@ -35,8 +83,7 @@ export default function FoodManageScreen() {
         Alert.alert('削除確認', `「${food.name}」を削除しますか？`, [
             { text: 'キャンセル', style: 'cancel' },
             {
-                text: '削除',
-                style: 'destructive',
+                text: '削除', style: 'destructive',
                 onPress: async () => {
                     const db = await getDatabase();
                     await db.runAsync('DELETE FROM food_masters WHERE id = ?', food.id);
@@ -48,7 +95,6 @@ export default function FoodManageScreen() {
 
     return (
         <View style={styles.container}>
-            {/* カテゴリタブ */}
             <FlatList
                 horizontal
                 data={CATEGORIES}
@@ -68,50 +114,58 @@ export default function FoodManageScreen() {
                 )}
             />
 
-            {/* 食材リスト */}
             <FlatList
                 data={filteredFoods}
                 keyExtractor={item => item.id}
                 contentContainerStyle={styles.listContent}
-                renderItem={({ item }) => (
-                    <View style={styles.foodItem}>
-                        <Text style={styles.foodIcon}>{item.iconKey}</Text>
-                        <View style={styles.foodInfo}>
-                            <Text style={styles.foodName}>{item.name}</Text>
-                            <Text style={styles.foodCategory}>
-                                {FOOD_CATEGORY_ICONS[item.category]} {FOOD_CATEGORY_LABELS[item.category]}
-                                {item.isDefault ? '' : ' ・ カスタム'}
-                            </Text>
-                        </View>
-                        <View style={styles.actions}>
-                            <TouchableOpacity
-                                style={styles.editButton}
-                                onPress={() => router.push({ pathname: '/foods/edit', params: { id: item.id } })}
-                            >
-                                <Text style={styles.editButtonText}>✏️</Text>
-                            </TouchableOpacity>
-                            {!item.isDefault && (
+                renderItem={({ item }) => {
+                    const stats = foodStats.get(item.id);
+                    return (
+                        <View style={styles.foodItem}>
+                            <Text style={styles.foodIcon}>{item.iconKey}</Text>
+                            <View style={styles.foodInfo}>
+                                <Text style={styles.foodName}>{item.name}</Text>
+                                <Text style={styles.foodCategory}>
+                                    {FOOD_CATEGORY_ICONS[item.category]} {FOOD_CATEGORY_LABELS[item.category]}
+                                    {item.isDefault ? '' : ' ・ カスタム'}
+                                </Text>
+                                {stats ? (
+                                    <View style={styles.statsRow}>
+                                        <Text style={styles.statsText}>
+                                            摂取{stats.totalTriedCount}回 ・ 初回{stats.firstTriedDate || '—'} ・ 最終{stats.lastTriedDate || '—'}
+                                        </Text>
+                                        {stats.latestPreference && (
+                                            <Text style={[
+                                                styles.prefBadge,
+                                                { color: PREFERENCE_COLORS[stats.latestPreference as keyof typeof PREFERENCE_COLORS] }
+                                            ]}>
+                                                {PREFERENCE_ICONS[stats.latestPreference as keyof typeof PREFERENCE_ICONS]}{' '}
+                                                {PREFERENCE_LABELS[stats.latestPreference as keyof typeof PREFERENCE_LABELS]}
+                                            </Text>
+                                        )}
+                                    </View>
+                                ) : null}
+                            </View>
+                            <View style={styles.actions}>
                                 <TouchableOpacity
-                                    style={styles.deleteBtn}
-                                    onPress={() => handleDelete(item)}
+                                    style={styles.editButton}
+                                    onPress={() => router.push({ pathname: '/foods/edit', params: { id: item.id } })}
                                 >
-                                    <Text style={styles.deleteBtnText}>🗑️</Text>
+                                    <Text style={styles.editButtonText}>✏️</Text>
                                 </TouchableOpacity>
-                            )}
+                                {!item.isDefault && (
+                                    <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item)}>
+                                        <Text style={styles.deleteBtnText}>🗑️</Text>
+                                    </TouchableOpacity>
+                                )}
+                            </View>
                         </View>
-                    </View>
-                )}
-                ListEmptyComponent={
-                    <Text style={styles.emptyText}>食材がありません</Text>
-                }
+                    );
+                }}
+                ListEmptyComponent={<Text style={styles.emptyText}>食材がありません</Text>}
             />
 
-            {/* 追加ボタン */}
-            <TouchableOpacity
-                style={styles.fab}
-                onPress={() => router.push('/foods/edit')}
-                activeOpacity={0.8}
-            >
+            <TouchableOpacity style={styles.fab} onPress={() => router.push('/foods/edit')} activeOpacity={0.8}>
                 <Text style={styles.fabText}>＋</Text>
             </TouchableOpacity>
         </View>
@@ -137,6 +191,9 @@ const styles = StyleSheet.create({
     foodInfo: { flex: 1 },
     foodName: { fontSize: 16, fontWeight: '600', color: '#333' },
     foodCategory: { fontSize: 12, color: '#999', marginTop: 2 },
+    statsRow: { marginTop: 4 },
+    statsText: { fontSize: 11, color: '#888' },
+    prefBadge: { fontSize: 11, fontWeight: '600', marginTop: 2 },
     actions: { flexDirection: 'row', gap: 8 },
     editButton: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#F5F5F5', justifyContent: 'center', alignItems: 'center' },
     editButtonText: { fontSize: 16 },

@@ -1,8 +1,7 @@
 import BottomSheet from '@gorhom/bottom-sheet';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { PanResponder, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DayDetailBottomSheet } from '../src/components/bottomSheet/DayDetailBottomSheet';
 import { CalendarHeader } from '../src/components/calendar/CalendarHeader';
@@ -16,7 +15,7 @@ import {
     getToday
 } from '../src/utils/date';
 
-const SWIPE_THRESHOLD = 50;
+const SWIPE_THRESHOLD = 60;
 
 export default function HomeScreen() {
     const router = useRouter();
@@ -32,7 +31,6 @@ export default function HomeScreen() {
     const loadByMonth = useRecordStore(s => s.loadByMonth);
     const getRecordsByDate = useRecordStore(s => s.getRecordsByDate);
 
-    // 月データを読み込み
     useEffect(() => {
         loadByMonth(visibleMonth);
     }, [visibleMonth]);
@@ -48,9 +46,8 @@ export default function HomeScreen() {
     }, [visibleMonth]);
 
     const handleGoToday = useCallback(() => {
-        const today = getToday();
         setVisibleMonth(getCurrentMonth());
-        setSelectedDate(today);
+        setSelectedDate(getToday());
     }, []);
 
     const handleDateSelect = useCallback((date: string) => {
@@ -59,87 +56,63 @@ export default function HomeScreen() {
     }, []);
 
     const handleAddRecord = useCallback(() => {
-        router.push({
-            pathname: '/meal/edit',
-            params: { date: selectedDate },
-        });
+        router.push({ pathname: '/meal/edit', params: { date: selectedDate } });
     }, [selectedDate]);
 
     const handleEditRecord = useCallback((id: string) => {
-        router.push({
-            pathname: '/meal/edit',
-            params: { id, date: selectedDate },
-        });
+        router.push({ pathname: '/meal/edit', params: { id, date: selectedDate } });
     }, [selectedDate]);
 
-    // スワイプで月移動
-    const swipeGesture = Gesture.Pan()
-        .activeOffsetX([-30, 30])
-        .onEnd((e) => {
-            if (e.translationX > SWIPE_THRESHOLD) {
-                handlePrevMonth();
-            } else if (e.translationX < -SWIPE_THRESHOLD) {
-                handleNextMonth();
-            }
-        });
+    // PanResponderでスワイプ検出（GestureDetectorの代わり）
+    const panResponder = useRef(
+        PanResponder.create({
+            onMoveShouldSetPanResponder: (_, gestureState) => {
+                return Math.abs(gestureState.dx) > 20 && Math.abs(gestureState.dy) < 30;
+            },
+            onPanResponderRelease: (_, gestureState) => {
+                if (gestureState.dx > SWIPE_THRESHOLD) {
+                    setVisibleMonth(getPrevMonth(useUIStore.getState().visibleMonth));
+                } else if (gestureState.dx < -SWIPE_THRESHOLD) {
+                    setVisibleMonth(getNextMonth(useUIStore.getState().visibleMonth));
+                }
+            },
+        })
+    ).current;
 
     return (
         <View style={[styles.container, { paddingTop: insets.top }]}>
-            {/* ナビゲーションメニュー（タイトル削除） */}
             <View style={styles.topBar}>
                 <View style={styles.menuButtons}>
-                    <TouchableOpacity
-                        style={styles.menuButton}
-                        onPress={() => router.push('/foods/manage')}
-                    >
+                    <TouchableOpacity style={styles.menuButton} onPress={() => router.push('/foods/manage')}>
                         <Text style={styles.menuButtonText}>🥗</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.menuButton}
-                        onPress={() => router.push('/first-foods')}
-                    >
-                        <Text style={styles.menuButtonText}>★</Text>
+                    <TouchableOpacity style={styles.menuButton} onPress={() => router.push('/first-foods')}>
+                        <Text style={styles.menuButtonText}>初</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.menuButton}
-                        onPress={() => router.push('/stats')}
-                    >
+                    <TouchableOpacity style={styles.menuButton} onPress={() => router.push('/stats')}>
                         <Text style={styles.menuButtonText}>📊</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.menuButton}
-                        onPress={() => router.push('/food-preferences')}
-                    >
-                        <Text style={styles.menuButtonText}>📋</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.menuButton}
-                        onPress={() => router.push('/settings')}
-                    >
+                    <TouchableOpacity style={styles.menuButton} onPress={() => router.push('/settings')}>
                         <Text style={styles.menuButtonText}>⚙️</Text>
                     </TouchableOpacity>
                 </View>
             </View>
 
-            {/* カレンダー */}
             <CalendarHeader
                 visibleMonth={visibleMonth}
                 onPrevMonth={handlePrevMonth}
                 onNextMonth={handleNextMonth}
                 onGoToday={handleGoToday}
             />
-            <GestureDetector gesture={swipeGesture}>
-                <View>
-                    <MonthCalendar
-                        visibleMonth={visibleMonth}
-                        selectedDate={selectedDate}
-                        summaries={calendarSummaries}
-                        onDateSelect={handleDateSelect}
-                    />
-                </View>
-            </GestureDetector>
+            <View {...panResponder.panHandlers}>
+                <MonthCalendar
+                    visibleMonth={visibleMonth}
+                    selectedDate={selectedDate}
+                    summaries={calendarSummaries}
+                    onDateSelect={handleDateSelect}
+                />
+            </View>
 
-            {/* ボトムシート */}
             <DayDetailBottomSheet
                 selectedDate={selectedDate}
                 records={dayRecords}
@@ -152,30 +125,9 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#FFF',
-    },
-    topBar: {
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-    },
-    menuButtons: {
-        flexDirection: 'row',
-        gap: 4,
-    },
-    menuButton: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: '#FFF0F3',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    menuButtonText: {
-        fontSize: 16,
-    },
+    container: { flex: 1, backgroundColor: '#FFF' },
+    topBar: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8 },
+    menuButtons: { flexDirection: 'row', gap: 4 },
+    menuButton: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#FFF0F3', justifyContent: 'center', alignItems: 'center' },
+    menuButtonText: { fontSize: 16 },
 });

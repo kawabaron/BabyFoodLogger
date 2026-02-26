@@ -57,7 +57,7 @@ export function CalendarDayCell({
                     {/* フラグ表示 */}
                     <View style={styles.flagsRow}>
                         {summary!.hasFirstTriedFood && (
-                            <Text style={styles.flagText}>★</Text>
+                            <Text style={styles.flagText}>初</Text>
                         )}
                         {summary!.hasAllergyMemo && (
                             <Text style={styles.allergyFlag}>!</Text>

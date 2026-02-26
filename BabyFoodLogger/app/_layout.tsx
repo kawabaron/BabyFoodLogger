@@ -84,10 +84,7 @@ export default function RootLayout() {
           name="stats"
           options={{ title: '統計' }}
         />
-        <Stack.Screen
-          name="food-preferences"
-          options={{ title: '食材評価一覧' }}
-        />
+
         <Stack.Screen
           name="settings"
           options={{ title: '設定' }}

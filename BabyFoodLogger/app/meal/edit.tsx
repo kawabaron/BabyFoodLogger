@@ -21,7 +21,7 @@ import { useMasterStore } from '../../src/stores/masterStore';
 import { useRecordStore } from '../../src/stores/recordStore';
 import { useUIStore } from '../../src/stores/uiStore';
 import type { MealRecordInput, PreferenceLevel } from '../../src/types/domain';
-import { AMOUNT_LABELS, APPETITE_LABELS, MAX_MEMO_LENGTH } from '../../src/utils/constants';
+import { AMOUNT_LABELS, MAX_MEMO_LENGTH } from '../../src/utils/constants';
 
 const AMOUNTS = ['small', 'medium', 'large'] as const;
 const APPETITES = ['low', 'normal', 'high'] as const;
@@ -151,7 +151,6 @@ export default function MealEditScreen() {
     const [selectedMinute, setSelectedMinute] = useState(Math.floor(dayjs().minute() / 5) * 5);
     const [note, setNote] = useState('');
     const [allergyMemo, setAllergyMemo] = useState('');
-    const [appetiteLevel, setAppetiteLevel] = useState<'low' | 'normal' | 'high' | undefined>();
     const [selectedFoodIds, setSelectedFoodIds] = useState<string[]>([]);
     const [foodAmounts, setFoodAmounts] = useState<Record<string, 'small' | 'medium' | 'large'>>({});
     const [foodPreferences, setFoodPreferences] = useState<Record<string, PreferenceLevel>>({});
@@ -160,11 +159,7 @@ export default function MealEditScreen() {
     const [showFoodSelector, setShowFoodSelector] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
-    const dateOptions = useMemo(() => generateDateOptions(initialDate), [initialDate]);
-    const selectedDateIndex = useMemo(() => {
-        const idx = dateOptions.findIndex(o => o.value === selectedDate);
-        return idx >= 0 ? idx : 30; // center
-    }, [selectedDate, dateOptions]);
+    const dateOptions = useMemo(() => generateDateOptions(selectedDate), [selectedDate]);
 
     const hourItems = useMemo(() => HOURS.map(h => ({ label: String(h), value: h })), []);
     const minuteItems = useMemo(() => MINUTES.map(m => ({ label: String(m).padStart(2, '0'), value: m })), []);
@@ -184,7 +179,6 @@ export default function MealEditScreen() {
                 }
                 setNote(record.note || '');
                 setAllergyMemo(record.allergyReactionMemo || '');
-                setAppetiteLevel(record.appetiteLevel);
 
                 const foods = await getMealRecordFoodsByRecordId(record.id);
                 setSelectedFoodIds(foods.map(f => f.foodId));
@@ -228,7 +222,7 @@ export default function MealEditScreen() {
                 time: timeStr,
                 note: note || undefined,
                 allergyReactionMemo: allergyMemo || undefined,
-                appetiteLevel,
+                appetiteLevel: undefined,
                 foods: selectedFoodIds.map(foodId => ({
                     foodId,
                     amountLevel: foodAmounts[foodId],
@@ -295,7 +289,7 @@ export default function MealEditScreen() {
                     <View style={styles.pickerContainer}>
                         <PickerColumn
                             items={dateOptions}
-                            selectedIndex={selectedDateIndex}
+                            selectedIndex={30}
                             onSelect={i => setSelectedDate(dateOptions[i].value)}
                         />
                         <PickerColumn
@@ -383,23 +377,6 @@ export default function MealEditScreen() {
                     )}
                 </View>
 
-                {/* 食べた量 */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>😋 食べた量</Text>
-                    <View style={styles.chipRow}>
-                        {APPETITES.map(a => (
-                            <TouchableOpacity
-                                key={a}
-                                style={[styles.chip, appetiteLevel === a && styles.activeChip]}
-                                onPress={() => setAppetiteLevel(appetiteLevel === a ? undefined : a)}
-                            >
-                                <Text style={[styles.chipText, appetiteLevel === a && styles.activeChipText]}>
-                                    {APPETITE_LABELS[a]}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                </View>
 
                 {/* 写真 */}
                 <View style={styles.section}>
